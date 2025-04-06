@@ -96,4 +96,64 @@ public class MovementTest {
         assertEquals(startX, karol.getX());
         assertEquals(startY, karol.getY());
     }
+
+    @Test
+    void testBeepersInventory() {
+        // Initially no beepers
+        assertEquals(0, karol.getBeepersInBag(), "Should start with no beepers");
+        assertFalse(karol.hasBeeper(), "Should not have any beepers initially");
+
+        // Put a beeper in the world and pick it up
+        world.putBeeper(2, 2);
+        assertTrue(karol.beeperPresent(), "Should detect beeper at current position");
+        karol.pickBeeper();
+        assertEquals(1, karol.getBeepersInBag(), "Should have one beeper after picking up");
+        assertTrue(karol.hasBeeper(), "Should have a beeper after picking up");
+
+        // Try to put down the beeper
+        karol.putBeeper();
+        assertEquals(0, karol.getBeepersInBag(), "Should have no beepers after putting down");
+        assertFalse(karol.hasBeeper(), "Should not have any beepers after putting down");
+
+        // Try to put down a beeper without having any
+        assertThrows(IllegalStateException.class, () -> karol.putBeeper(),
+            "Putting beeper without having any should throw exception");
+    }
+
+    @Test
+    void testAdvancedMovement() {
+        // Test moveUntilWall
+        karol.moveUntilWall();
+        assertEquals(4, karol.getX(), "Should move until last position before wall");
+        
+        // Test turnAround
+        karol.turnAround();
+        assertEquals(Robot.Direction.WEST, karol.getDirection(), "Should be facing west after turn around");
+        
+        // Test moveSteps
+        karol.moveSteps(2);
+        assertEquals(2, karol.getX(), "Should move back 2 steps");
+    }
+
+    @Test
+    void testMultipleBeepers() {
+        // Put multiple beepers and pick them all
+        world.putBeeper(2, 2);
+        world.putBeeper(2, 2);
+        world.putBeeper(2, 2);
+        
+        // Pick up beepers one by one
+        karol.pickBeeper();
+        karol.pickBeeper();
+        karol.pickBeeper();
+        assertEquals(3, karol.getBeepersInBag(), "Should have picked up all three beepers");
+
+        // Try to put down more beepers than we have
+        assertThrows(IllegalStateException.class, () -> karol.putBeepers(4),
+            "Putting more beepers than available should throw exception");
+
+        // Put down multiple beepers
+        karol.putBeepers(2);
+        assertEquals(1, karol.getBeepersInBag(), "Should have one beeper left after putting down two");
+    }
 } 

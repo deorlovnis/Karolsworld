@@ -84,6 +84,11 @@ public class MyProgram implements KarolProgram {
 - `putBeeper()` - Put down a beeper at the current position
 - `frontIsClear()` - Check if the path ahead is clear
 - `beeperPresent()` - Check if there's a beeper at the current position
+- `getBeepersInBag()` - Get the number of beepers in the robot's bag
+- `hasBeeper()` - Check if the robot has any beepers in its bag
+- `moveUntilWall()` - Move forward until a wall is encountered
+- `turnAround()` - Turn 180 degrees
+- `moveSteps(int steps)` - Move forward a specified number of steps
 
 ## Project Structure
 

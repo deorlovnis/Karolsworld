@@ -13,10 +13,14 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.nio.file.Files;
+import javafx.scene.Node;
+import javafx.geometry.Pos;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 public class Main extends Application {
     private static final int CELL_SIZE = 50;
@@ -28,15 +32,39 @@ public class Main extends Application {
     private AssignmentLoader loader;
     private World world;
     private Karol karol;
-    private WorldView worldView;
     private ObservableList<String> assignmentNames;
-    private Stage programWindow;
+    private String lastSavedProgram;
 
     @Override
     public void start(Stage primaryStage) {
         try {
             loader = new AssignmentLoader();
             assignments = loader.loadAllAssignments();
+            
+            // Initialize with example program
+            lastSavedProgram = """
+                package com.karol.userprograms;
+
+                import com.karol.KarolProgram;
+                import com.karol.Karol;
+
+                public class MyProgram implements KarolProgram {
+                    @Override
+                    public void run(Karol karol) {
+                        // TODO: Write your program here!
+                        // Here are some commands you can use:
+                        // karol.move() - Move forward one step
+                        // karol.turnLeft() - Turn 90 degrees left
+                        // karol.turnRight() - Turn 90 degrees right
+                        // karol.putBeeper() - Put a beeper (if you have one!)
+                        // karol.pickBeeper() - Pick up a beeper
+                        // karol.frontIsClear() - Check if path ahead is clear
+                        // karol.beeperPresent() - Check if beeper is here
+                        // karol.hasBeeper() - Check if you have a beeper to put down
+                        // karol.getBeepersInBag() - Check how many beepers you have
+                    }
+                }
+                """;
             
             BorderPane root = new BorderPane();
             
@@ -85,29 +113,63 @@ public class Main extends Application {
             programSection.setVisible(false);
             
             Label programLabel = new Label("Program:");
+
+            // Create a HBox to hold line numbers and program text
+            HBox editorBox = new HBox();
+            editorBox.setStyle("-fx-font-family: monospace; -fx-background-color: white; -fx-border-color: lightgray;");
+
+            // Line numbers
+            VBox lineNumbers = new VBox();
+            lineNumbers.setAlignment(Pos.TOP_RIGHT);
+            lineNumbers.setPadding(new Insets(5, 5, 5, 5));
+            lineNumbers.setStyle("-fx-background-color: #f0f0f0; -fx-border-color: lightgray; -fx-border-width: 0 1 0 0;");
+            lineNumbers.setPrefWidth(40);
+
+            // Program text area
             programArea = new TextArea();
             programArea.setWrapText(true);
             programArea.setPrefRowCount(15);
             programArea.setStyle("-fx-font-family: monospace;");
-            
-            // Add example program
+
+            // Update line numbers when text changes
+            programArea.textProperty().addListener((obs, oldText, newText) -> {
+                lastSavedProgram = newText;
+                updateLineNumbers(lineNumbers, newText);
+            });
+
+            // Handle tab key
+            programArea.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+                if (event.getCode() == KeyCode.TAB) {
+                    event.consume(); // Prevent default tab behavior
+                    int caretPosition = programArea.getCaretPosition();
+                    programArea.insertText(caretPosition, "    "); // Insert 4 spaces
+                }
+            });
+
+            editorBox.getChildren().addAll(lineNumbers, programArea);
+            HBox.setHgrow(programArea, Priority.ALWAYS);
+
+            // Set initial text and line numbers
             programArea.setText("""
                 package com.karol.userprograms;
 
                 import com.karol.KarolProgram;
                 import com.karol.Karol;
-                import com.karol.KarolLibrary;
 
                 public class MyProgram implements KarolProgram {
                     @Override
                     public void run(Karol karol) {
-                        // Move to wall and put a beeper
-                        KarolLibrary.moveUntilWall(karol);
-                        karol.putBeeper();
-                        
-                        // Turn around and return to start
-                        KarolLibrary.turnAround(karol);
-                        KarolLibrary.moveUntilWall(karol);
+                        // TODO: Write your program here!
+                        // Here are some commands you can use:
+                        // karol.move() - Move forward one step
+                        // karol.turnLeft() - Turn left
+                        // karol.turnRight() - Turn right
+                        // karol.putBeeper() - Put down a beeper (if you have one!)
+                        // karol.pickBeeper() - Pick up a beeper
+                        // karol.frontIsClear() - Check if path ahead is clear
+                        // karol.beeperPresent() - Check if beeper is here
+                        // karol.hasBeeper() - Check if you have a beeper to put down
+                        // karol.getBeepersInBag() - Check how many beepers you have
                     }
                 }
                 """);
@@ -125,37 +187,75 @@ public class Main extends Application {
             libraryArea.setPrefRowCount(8);
             libraryArea.setStyle("-fx-font-family: monospace;");
             libraryArea.setText("""
-                Basic Commands:
-                --------------
-                karol.move()           - Move forward one step
-                karol.turnLeft()       - Turn 90 degrees left
-                karol.turnRight()      - Turn 90 degrees right
-                karol.putBeeper()      - Put a beeper at current position
-                karol.pickBeeper()     - Pick up a beeper from current position
-                karol.frontIsClear()   - Check if path ahead is clear
-                karol.beeperPresent()  - Check if beeper is at current position
+                Karol's Basic Commands (Things Karol Already Knows):
+                ------------------------------------------------
+                karol.move()           - Take one step forward
+                karol.turnLeft()       - Turn left
+                karol.turnRight()      - Turn right
+                karol.putBeeper()      - Put down a beeper
+                karol.pickBeeper()     - Pick up a beeper
+                karol.frontIsClear()   - Check if Karol can move forward
+                karol.beeperPresent()  - Check if there's a beeper here
 
-                Library Commands:
-                ----------------
-                KarolLibrary.turnRight(karol)      - Turn right using left turns
-                KarolLibrary.turnAround(karol)     - Turn 180 degrees
-                KarolLibrary.moveSteps(karol, n)   - Move forward n steps
-                KarolLibrary.moveUntilWall(karol)  - Move until hitting a wall
-                KarolLibrary.putBeepers(karol, n)  - Put n beepers at current position
-                KarolLibrary.pickAllBeepers(karol) - Pick up all beepers at current position
-                KarolLibrary.faceNorth(karol)      - Turn until facing north
-                KarolLibrary.faceEast(karol)       - Turn until facing east
-                KarolLibrary.faceSouth(karol)      - Turn until facing south
-                KarolLibrary.faceWest(karol)       - Turn until facing west
+                Karol's Extra Commands:
+                ---------------------
+                karol.moveUntilWall()  - Keep moving until hitting a wall
+                karol.turnAround()     - Turn around (face the other way)
+                karol.moveSteps(3)     - Move forward 3 steps (or any number)
+                karol.putBeepers(3)    - Put down 3 beepers (or any number)
+
+                Teaching Karol New Tricks!
+                ------------------------
+                You can teach Karol new tricks by creating your own commands!
+                Here's how to do it:
+
+                1. Add a new method (trick) to your program:
+                   private void moveTwice(Karol karol) {
+                       karol.move();  // First step
+                       karol.move();  // Second step
+                   }
+
+                2. Use your new trick in the run method:
+                   public void run(Karol karol) {
+                       moveTwice(karol);  // Karol moves twice!
+                   }
+
+                More Examples of New Tricks:
+                --------------------------
+                // Make Karol dance
+                private void dance(Karol karol) {
+                    karol.turnLeft();
+                    karol.turnRight();
+                    karol.turnAround();
+                }
+
+                // Make Karol put down 3 beepers in a row
+                private void putBeeperLine(Karol karol) {
+                    karol.putBeeper();
+                    karol.move();
+                    karol.putBeeper();
+                    karol.move();
+                    karol.putBeeper();
+                }
                 """);
             libraryPane.setContent(libraryArea);
             libraryPane.setExpanded(false);
 
+            // Add Save and Run buttons
+            HBox buttonBox = new HBox(10);
+            Button saveButton = new Button("Save Solution");
+            saveButton.setMaxWidth(Double.MAX_VALUE);
+            saveButton.setOnAction(e -> saveSolution());
+            runProgramButton.setMaxWidth(Double.MAX_VALUE);
+            buttonBox.getChildren().addAll(runProgramButton, saveButton);
+            HBox.setHgrow(runProgramButton, Priority.ALWAYS);
+            HBox.setHgrow(saveButton, Priority.ALWAYS);
+
             programSection.getChildren().addAll(
                 new Separator(),
                 programLabel,
-                programArea,
-                runProgramButton,
+                editorBox,  // Use editorBox instead of directly adding programArea
+                buttonBox,
                 libraryPane
             );
 
@@ -189,12 +289,15 @@ public class Main extends Application {
             putBeeperButton.setMaxWidth(Double.MAX_VALUE);
             resetButton.setMaxWidth(Double.MAX_VALUE);
             
+            // Add beeper count label to control panel
+            Label beeperCountLabel = new Label("Beepers: 0");
             controlPanel.getChildren().addAll(
                 new Label("Controls:"),
                 moveButton, turnLeftButton, turnRightButton,
                 pickBeeperButton, putBeeperButton,
                 new Separator(),
-                resetButton
+                resetButton,
+                beeperCountLabel
             );
             
             // Event handlers
@@ -257,6 +360,7 @@ public class Main extends Application {
                 if (karol != null) {
                     try {
                         karol.pickBeeper();
+                        beeperCountLabel.setText("Beepers: " + karol.getBeepersInBag());
                         drawWorld();
                     } catch (IllegalStateException ex) {
                         showError("No beeper to pick up!");
@@ -266,8 +370,13 @@ public class Main extends Application {
             
             putBeeperButton.setOnAction(e -> {
                 if (karol != null) {
-                    karol.putBeeper();
-                    drawWorld();
+                    try {
+                        karol.putBeeper();
+                        beeperCountLabel.setText("Beepers: " + karol.getBeepersInBag());
+                        drawWorld();
+                    } catch (IllegalStateException ex) {
+                        showError("No beepers in bag to put down!");
+                    }
                 }
             });
             
@@ -278,6 +387,11 @@ public class Main extends Application {
                     for (Assignment assignment : assignments) {
                         if (assignment.getName().equals(selectedName)) {
                             loadAssignment(assignment);
+                            // Update beeper count label
+                            Node beeperLabel = controlPanel.getChildren().get(1);
+                            if (beeperLabel instanceof Label) {
+                                ((Label) beeperLabel).setText("Beepers: 0");
+                            }
                             break;
                         }
                     }
@@ -334,6 +448,9 @@ public class Main extends Application {
         // Resize canvas to fit world
         worldCanvas.setWidth(assignment.getWorldWidth() * CELL_SIZE);
         worldCanvas.setHeight(assignment.getWorldHeight() * CELL_SIZE);
+        
+        // Load saved solution if it exists
+        loadSolution(assignment.getName());
         
         drawWorld();
     }
@@ -578,6 +695,95 @@ public class Main extends Application {
         } finally {
             // Clean up temporary files
             ProgramExecutor.cleanup();
+        }
+    }
+
+    private void saveSolution() {
+        String selectedName = assignmentList.getSelectionModel().getSelectedItem();
+        if (selectedName == null) {
+            showError("Please select an assignment first");
+            return;
+        }
+
+        try {
+            // Create solutions directory if it doesn't exist
+            File solutionsDir = new File("src/main/resources/solutions");
+            if (!solutionsDir.exists()) {
+                solutionsDir.mkdirs();
+            }
+
+            // Create solution file named after the assignment
+            String filename = selectedName.toLowerCase().replace(" ", "_") + "_solution.java";
+            File solutionFile = new File(solutionsDir, filename);
+            Files.writeString(solutionFile.toPath(), programArea.getText());
+
+            showInfo("Solution saved successfully!");
+        } catch (IOException e) {
+            showError("Error saving solution: " + e.getMessage());
+        }
+    }
+
+    private void loadSolution(String assignmentName) {
+        try {
+            // Try to load saved solution
+            String filename = assignmentName.toLowerCase().replace(" ", "_") + "_solution.java";
+            File solutionFile = new File("src/main/resources/solutions", filename);
+            
+            if (solutionFile.exists()) {
+                String savedSolution = Files.readString(solutionFile.toPath());
+                programArea.setText(savedSolution);
+                lastSavedProgram = savedSolution;
+            } else {
+                // If no solution exists, load the default template
+                programArea.setText("""
+                    package com.karol.userprograms;
+
+                    import com.karol.KarolProgram;
+                    import com.karol.Karol;
+
+                    public class MyProgram implements KarolProgram {
+                        @Override
+                        public void run(Karol karol) {
+                            // TODO: Write your program here!
+                            // Here are some commands you can use:
+                            // karol.move() - Move forward one step
+                            // karol.turnLeft() - Turn left
+                            // karol.turnRight() - Turn right
+                            // karol.putBeeper() - Put down a beeper (if you have one!)
+                            // karol.pickBeeper() - Pick up a beeper
+                            // karol.frontIsClear() - Check if path ahead is clear
+                            // karol.beeperPresent() - Check if beeper is here
+                            // karol.hasBeeper() - Check if you have a beeper to put down
+                            // karol.getBeepersInBag() - Check how many beepers you have
+                        }
+                    }
+                    """);
+            }
+        } catch (IOException e) {
+            showError("Error loading solution: " + e.getMessage());
+        }
+    }
+
+    private void showInfo(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Information");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void updateLineNumbers(VBox lineNumbers, String text) {
+        // Clear existing line numbers
+        lineNumbers.getChildren().clear();
+        
+        // Count lines
+        int lines = text.split("\n", -1).length;
+        
+        // Add new line numbers
+        for (int i = 1; i <= lines; i++) {
+            Label lineNum = new Label(String.format("%3d", i));
+            lineNum.setStyle("-fx-font-family: monospace; -fx-text-fill: #666666;");
+            lineNumbers.getChildren().add(lineNum);
         }
     }
 
