@@ -44,3 +44,6 @@ application-dev.properties
 
 # Debug files
 .vscode/
+
+# Assignment files
+src/main/resources/assignments/
