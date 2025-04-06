@@ -1,0 +1,177 @@
+{
+  "name": "Stone Mason Karel",
+  "description": "Karel starts at the corner of 1st Street and 1st Avenue, facing East. There are columns of beepers that need to be repaired. Karel must check each column and add beepers where they are missing.",
+  "worldWidth": 8,
+  "worldHeight": 8,
+  "initialRobots": [
+    {
+      "x": 1,
+      "y": 1,
+      "direction": "EAST"
+    }
+  ],
+  "walls": [
+    {
+      "x": 1,
+      "y": 1,
+      "isVertical": false
+    },
+    {
+      "x": 1,
+      "y": 2,
+      "isVertical": false
+    },
+    {
+      "x": 1,
+      "y": 3,
+      "isVertical": false
+    },
+    {
+      "x": 1,
+      "y": 4,
+      "isVertical": false
+    },
+    {
+      "x": 1,
+      "y": 5,
+      "isVertical": false
+    },
+    {
+      "x": 1,
+      "y": 6,
+      "isVertical": false
+    },
+    {
+      "x": 1,
+      "y": 7,
+      "isVertical": false
+    },
+    {
+      "x": 1,
+      "y": 8,
+      "isVertical": false
+    },
+    {
+      "x": 1,
+      "y": 1,
+      "isVertical": true
+    },
+    {
+      "x": 2,
+      "y": 1,
+      "isVertical": true
+    },
+    {
+      "x": 3,
+      "y": 1,
+      "isVertical": true
+    },
+    {
+      "x": 4,
+      "y": 1,
+      "isVertical": true
+    },
+    {
+      "x": 5,
+      "y": 1,
+      "isVertical": true
+    },
+    {
+      "x": 6,
+      "y": 1,
+      "isVertical": true
+    },
+    {
+      "x": 7,
+      "y": 1,
+      "isVertical": true
+    },
+    {
+      "x": 8,
+      "y": 1,
+      "isVertical": true
+    }
+  ],
+  "beepers": [
+    {
+      "x": 1,
+      "y": 4,
+      "count": 1
+    },
+    {
+      "x": 1,
+      "y": 8,
+      "count": 1
+    },
+    {
+      "x": 2,
+      "y": 3,
+      "count": 1
+    },
+    {
+      "x": 2,
+      "y": 7,
+      "count": 1
+    },
+    {
+      "x": 3,
+      "y": 2,
+      "count": 1
+    },
+    {
+      "x": 3,
+      "y": 6,
+      "count": 1
+    },
+    {
+      "x": 4,
+      "y": 1,
+      "count": 1
+    },
+    {
+      "x": 4,
+      "y": 5,
+      "count": 1
+    },
+    {
+      "x": 5,
+      "y": 4,
+      "count": 1
+    },
+    {
+      "x": 5,
+      "y": 8,
+      "count": 1
+    },
+    {
+      "x": 6,
+      "y": 3,
+      "count": 1
+    },
+    {
+      "x": 6,
+      "y": 7,
+      "count": 1
+    },
+    {
+      "x": 7,
+      "y": 2,
+      "count": 1
+    },
+    {
+      "x": 7,
+      "y": 6,
+      "count": 1
+    },
+    {
+      "x": 8,
+      "y": 1,
+      "count": 1
+    },
+    {
+      "x": 8,
+      "y": 5,
+      "count": 1
+    }
+  ]
+} 

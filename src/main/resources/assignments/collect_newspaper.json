@@ -1,0 +1,72 @@
+{
+  "name": "Collect Newspaper",
+  "description": "Karel starts at the corner of 1st Street and 1st Avenue, facing East. There is a newspaper (represented by a beeper) lying at the corner of 1st Street and 2nd Avenue. Karel must pick up the newspaper and return to its starting position.",
+  "worldWidth": 5,
+  "worldHeight": 5,
+  "initialRobots": [
+    {
+      "x": 1,
+      "y": 1,
+      "direction": "EAST"
+    }
+  ],
+  "walls": [
+    {
+      "x": 1,
+      "y": 1,
+      "isVertical": false
+    },
+    {
+      "x": 1,
+      "y": 2,
+      "isVertical": false
+    },
+    {
+      "x": 1,
+      "y": 3,
+      "isVertical": false
+    },
+    {
+      "x": 1,
+      "y": 4,
+      "isVertical": false
+    },
+    {
+      "x": 1,
+      "y": 5,
+      "isVertical": false
+    },
+    {
+      "x": 1,
+      "y": 1,
+      "isVertical": true
+    },
+    {
+      "x": 2,
+      "y": 1,
+      "isVertical": true
+    },
+    {
+      "x": 3,
+      "y": 1,
+      "isVertical": true
+    },
+    {
+      "x": 4,
+      "y": 1,
+      "isVertical": true
+    },
+    {
+      "x": 5,
+      "y": 1,
+      "isVertical": true
+    }
+  ],
+  "beepers": [
+    {
+      "x": 2,
+      "y": 1,
+      "count": 1
+    }
+  ]
+} 

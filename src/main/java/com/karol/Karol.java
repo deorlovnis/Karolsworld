@@ -3,101 +3,14 @@ package com.karol;
 public class Karol {
     private int x;
     private int y;
-    private Direction direction;
-    private int beepers;
+    private Robot.Direction direction;
     private World world;
 
-    public enum Direction {
-        NORTH, EAST, SOUTH, WEST;
-
-        public Direction turnLeft() {
-            return switch (this) {
-                case NORTH -> WEST;
-                case EAST -> NORTH;
-                case SOUTH -> EAST;
-                case WEST -> SOUTH;
-            };
-        }
-
-        public Direction turnRight() {
-            return switch (this) {
-                case NORTH -> EAST;
-                case EAST -> SOUTH;
-                case SOUTH -> WEST;
-                case WEST -> NORTH;
-            };
-        }
-    }
-
-    public Karol(int x, int y, Direction direction, World world) {
+    public Karol(int x, int y, Robot.Direction direction, World world) {
         this.x = x;
         this.y = y;
         this.direction = direction;
         this.world = world;
-        this.beepers = 0;
-    }
-
-    public void move() {
-        int newX = x;
-        int newY = y;
-
-        switch (direction) {
-            case NORTH -> newY--;
-            case EAST -> newX++;
-            case SOUTH -> newY++;
-            case WEST -> newX--;
-        }
-
-        if (world.isValidPosition(newX, newY)) {
-            x = newX;
-            y = newY;
-        } else {
-            throw new RuntimeException("Karol cannot move outside the world!");
-        }
-    }
-
-    public void turnLeft() {
-        direction = direction.turnLeft();
-    }
-
-    public void turnRight() {
-        direction = direction.turnRight();
-    }
-
-    public void pickBeeper() {
-        if (world.hasBeeper(x, y)) {
-            world.removeBeeper(x, y);
-            beepers++;
-        } else {
-            throw new RuntimeException("No beeper to pick up!");
-        }
-    }
-
-    public void putBeeper() {
-        if (beepers > 0) {
-            world.addBeeper(x, y);
-            beepers--;
-        } else {
-            throw new RuntimeException("No beepers to put down!");
-        }
-    }
-
-    public boolean frontIsClear() {
-        int newX = x;
-        int newY = y;
-
-        switch (direction) {
-            case NORTH -> newY--;
-            case EAST -> newX++;
-            case SOUTH -> newY++;
-            case WEST -> newX--;
-        }
-
-        return world.isValidPosition(newX, newY);
-    }
-
-    public boolean beepersPresent() {
-        return world.hasBeeper(x, y);
     }
 
     public int getX() {
@@ -108,11 +21,79 @@ public class Karol {
         return y;
     }
 
-    public Direction getDirection() {
+    public Robot.Direction getDirection() {
         return direction;
     }
 
-    public int getBeepers() {
-        return beepers;
+    public void move() {
+        int newX = x;
+        int newY = y;
+
+        switch (direction) {
+            case NORTH -> newY++;
+            case EAST -> newX++;
+            case SOUTH -> newY--;
+            case WEST -> newX--;
+        }
+
+        if (world.isValidMove(newX, newY)) {
+            x = newX;
+            y = newY;
+        } else {
+            throw new IllegalStateException("Cannot move in that direction!");
+        }
+    }
+
+    public void turnLeft() {
+        direction = switch (direction) {
+            case NORTH -> Robot.Direction.WEST;
+            case WEST -> Robot.Direction.SOUTH;
+            case SOUTH -> Robot.Direction.EAST;
+            case EAST -> Robot.Direction.NORTH;
+        };
+    }
+
+    public void turnRight() {
+        direction = switch (direction) {
+            case NORTH -> Robot.Direction.EAST;
+            case EAST -> Robot.Direction.SOUTH;
+            case SOUTH -> Robot.Direction.WEST;
+            case WEST -> Robot.Direction.NORTH;
+        };
+    }
+
+    public void pickBeeper() {
+        try {
+            world.pickBeeper(x, y);
+        } catch (IllegalStateException e) {
+            throw new IllegalStateException("No beeper to pick up!");
+        }
+    }
+
+    public void putBeeper() {
+        world.putBeeper(x, y);
+    }
+
+    public boolean frontIsClear() {
+        int checkX = x;
+        int checkY = y;
+
+        switch (direction) {
+            case NORTH -> checkY++;
+            case EAST -> checkX++;
+            case SOUTH -> checkY--;
+            case WEST -> checkX--;
+        }
+
+        return world.isValidMove(checkX, checkY);
+    }
+
+    public boolean beeperPresent() {
+        for (Beeper beeper : world.getBeepers()) {
+            if (beeper.getX() == x && beeper.getY() == y) {
+                return true;
+            }
+        }
+        return false;
     }
 } 
