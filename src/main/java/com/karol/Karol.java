@@ -36,7 +36,7 @@ public class Karol {
             case WEST -> newX--;
         }
 
-        if (world.isValidMove(newX, newY)) {
+        if (world.isValidMove(x, y, newX, newY)) {
             x = newX;
             y = newY;
         } else {
@@ -85,7 +85,7 @@ public class Karol {
             case WEST -> checkX--;
         }
 
-        return world.isValidMove(checkX, checkY);
+        return world.isValidMove(x, y, checkX, checkY);
     }
 
     public boolean beeperPresent() {

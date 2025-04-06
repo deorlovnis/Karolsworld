@@ -1,71 +1,61 @@
 {
   "name": "Collect Newspaper",
-  "description": "Karel starts at the corner of 1st Street and 1st Avenue, facing East. There is a newspaper (represented by a beeper) lying at the corner of 1st Street and 2nd Avenue. Karel must pick up the newspaper and return to its starting position.",
-  "worldWidth": 5,
+  "description": "Karel starts at (4,2) facing east. The newspaper (represented by a beeper) is at (7,2). Karel must pick up the newspaper and return to its starting position.",
+  "worldWidth": 7,
   "worldHeight": 5,
   "initialRobots": [
     {
-      "x": 1,
-      "y": 1,
+      "x": 4,
+      "y": 2,
       "direction": "EAST"
     }
   ],
   "walls": [
-    {
-      "x": 1,
-      "y": 1,
-      "isVertical": false
-    },
-    {
-      "x": 1,
-      "y": 2,
-      "isVertical": false
-    },
-    {
-      "x": 1,
-      "y": 3,
-      "isVertical": false
-    },
-    {
-      "x": 1,
-      "y": 4,
-      "isVertical": false
-    },
-    {
-      "x": 1,
-      "y": 5,
-      "isVertical": false
-    },
-    {
-      "x": 1,
-      "y": 1,
-      "isVertical": true
-    },
-    {
-      "x": 2,
-      "y": 1,
-      "isVertical": true
-    },
-    {
-      "x": 3,
-      "y": 1,
-      "isVertical": true
-    },
     {
       "x": 4,
       "y": 1,
       "isVertical": true
     },
     {
+      "x": 4,
+      "y": 2,
+      "isVertical": true
+    },
+    {
+      "x": 4,
+      "y": 3,
+      "isVertical": true
+    },
+    {
+      "x": 4,
+      "y": 3,
+      "isVertical": false
+    },
+    {
       "x": 5,
+      "y": 3,
+      "isVertical": false
+    },
+    {
+      "x": 6,
+      "y": 3,
+      "isVertical": false
+    },
+    {
+      "x": 6,
       "y": 1,
+      "isVertical": true
+    },
+    {
+      "x": 6,
+      "y": 2,
       "isVertical": true
     }
   ],
   "beepers": [
     {
-      "x": 2,
-      "y": 1,
+      "x": 7,
+      "y": 2,
       "count": 1
     }
   ]

@@ -80,9 +80,9 @@ public class World {
         }
     }
 
-    public boolean isValidMove(int x, int y) {
+    public boolean isValidMove(int currentX, int currentY, int newX, int newY) {
         // Check boundaries
-        if (x < 0 || x >= width || y < 0 || y >= height) {
+        if (newX < 0 || newX >= width || newY < 0 || newY >= height) {
             return false;
         }
 
@@ -90,17 +90,21 @@ public class World {
         for (Wall wall : walls) {
             if (wall.isVertical()) {
                 // For vertical walls, check if we're trying to pass through it
-                if (wall.getX() == x || wall.getX() == x + 1) {
-                    // Check if the wall spans this y-coordinate
-                    if (wall.getY() <= y && wall.getY() + 1 >= y) {
+                if (currentY == newY && wall.getY() == currentY) {
+                    // Check if the wall is between our current and new position
+                    int minX = Math.min(currentX, newX);
+                    int maxX = Math.max(currentX, newX);
+                    if (wall.getX() >= minX && wall.getX() <= maxX) {
                         return false;
                     }
                 }
             } else {
                 // For horizontal walls, check if we're trying to pass through it
-                if (wall.getY() == y || wall.getY() == y + 1) {
-                    // Check if the wall spans this x-coordinate
-                    if (wall.getX() <= x && wall.getX() + 1 >= x) {
+                if (currentX == newX && wall.getX() == currentX) {
+                    // Check if the wall is between our current and new position
+                    int minY = Math.min(currentY, newY);
+                    int maxY = Math.max(currentY, newY);
+                    if (wall.getY() >= minY && wall.getY() <= maxY) {
                         return false;
                     }
                 }

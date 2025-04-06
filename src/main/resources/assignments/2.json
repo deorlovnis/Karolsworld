@@ -1,0 +1,29 @@
+{
+  "name" : "2",
+  "description" : "2",
+  "worldWidth" : 7,
+  "worldHeight" : 5,
+  "initialRobots" : [ {
+    "x" : 3,
+    "y" : 2,
+    "direction" : "EAST"
+  } ],
+  "walls" : [ {
+    "x" : 3,
+    "y" : 2,
+    "isVertical" : false
+  }, {
+    "x" : 3,
+    "y" : 3,
+    "isVertical" : false
+  }, {
+    "x" : 3,
+    "y" : 2,
+    "isVertical" : true
+  } ],
+  "beepers" : [ {
+    "x" : 6,
+    "y" : 2,
+    "count" : 1
+  } ]
+}
