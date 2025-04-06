@@ -56,17 +56,18 @@ public class Main extends Application {
             descriptionArea.setWrapText(true);
             descriptionArea.setPrefRowCount(4);
             
-            Button loadButton = new Button("Load Assignment");
-            loadButton.setMaxWidth(Double.MAX_VALUE);
-
             Button createProblemButton = new Button("Create Problem");
             createProblemButton.setMaxWidth(Double.MAX_VALUE);
             createProblemButton.setOnAction(e -> createNewProblem());
+
+            Button deleteButton = new Button("Delete Assignment");
+            deleteButton.setMaxWidth(Double.MAX_VALUE);
+            deleteButton.setOnAction(e -> deleteSelectedAssignment());
             
             leftPanel.getChildren().addAll(
                 assignmentsLabel, assignmentList,
                 new Label("Description:"), descriptionArea,
-                loadButton, createProblemButton
+                createProblemButton, deleteButton
             );
             
             // Center - World view
@@ -104,19 +105,7 @@ public class Main extends Application {
                         .orElse(null);
                     if (selected != null) {
                         descriptionArea.setText(selected.getDescription());
-                    }
-                }
-            });
-            
-            loadButton.setOnAction(e -> {
-                String selectedName = assignmentList.getSelectionModel().getSelectedItem();
-                if (selectedName != null) {
-                    Assignment selected = assignments.stream()
-                        .filter(a -> a.getName().equals(selectedName))
-                        .findFirst()
-                        .orElse(null);
-                    if (selected != null) {
-                        loadAssignment(selected);
+                        loadAssignment(selected);  // Automatically load the selected assignment
                     }
                 }
             });
@@ -357,6 +346,63 @@ public class Main extends Application {
                 editorStage.setTitle("World Editor - " + name);
                 editorStage.setScene(editorScene);
                 editorStage.show();
+            }
+        }
+    }
+
+    private void deleteSelectedAssignment() {
+        String selectedName = assignmentList.getSelectionModel().getSelectedItem();
+        if (selectedName == null) {
+            showError("Please select an assignment to delete");
+            return;
+        }
+
+        // Show confirmation dialog
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Delete Assignment");
+        confirm.setHeaderText("Delete " + selectedName + "?");
+        confirm.setContentText("This action cannot be undone.");
+
+        if (confirm.showAndWait().filter(response -> response == ButtonType.OK).isPresent()) {
+            try {
+                // Find the assignment file by matching the name in the JSON
+                File assignmentsDir = new File("src/main/resources/assignments");
+                File[] files = assignmentsDir.listFiles((dir, name) -> name.endsWith(".json"));
+                
+                boolean deleted = false;
+                if (files != null) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    for (File file : files) {
+                        try {
+                            Assignment assignment = mapper.readValue(file, Assignment.class);
+                            if (assignment.getName().equals(selectedName)) {
+                                if (file.delete()) {
+                                    deleted = true;
+                                    break;
+                                }
+                            }
+                        } catch (IOException e) {
+                            // Skip files that can't be parsed
+                            continue;
+                        }
+                    }
+                }
+
+                if (deleted) {
+                    // Reload assignments
+                    assignments = loader.loadAllAssignments();
+                    assignmentNames.clear();
+                    for (Assignment assignment : assignments) {
+                        assignmentNames.add(assignment.getName());
+                    }
+                    
+                    // Clear description if the deleted assignment was selected
+                    descriptionArea.clear();
+                } else {
+                    showError("Could not delete the assignment file");
+                }
+            } catch (IOException ex) {
+                showError("Error reloading assignments: " + ex.getMessage());
             }
         }
     }

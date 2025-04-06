@@ -1,6 +1,6 @@
 {
-  "name" : "problem 1",
-  "description" : "",
+  "name" : "Problem 1",
+  "description" : "first steps",
   "worldWidth" : 7,
   "worldHeight" : 5,
   "initialRobots" : [ {
@@ -10,6 +10,30 @@
   } ],
   "walls" : [ {
     "x" : 2,
+    "y" : 4,
+    "isVertical" : false
+  }, {
+    "x" : 3,
+    "y" : 4,
+    "isVertical" : false
+  }, {
+    "x" : 4,
+    "y" : 4,
+    "isVertical" : false
+  }, {
+    "x" : 4,
+    "y" : 1,
+    "isVertical" : false
+  }, {
+    "x" : 3,
+    "y" : 1,
+    "isVertical" : false
+  }, {
+    "x" : 2,
+    "y" : 1,
+    "isVertical" : false
+  }, {
+    "x" : 2,
     "y" : 3,
     "isVertical" : true
   }, {
@@ -18,39 +42,15 @@
     "isVertical" : true
   }, {
     "x" : 2,
-    "y" : 3,
-    "isVertical" : false
-  }, {
-    "x" : 3,
-    "y" : 3,
-    "isVertical" : false
-  }, {
-    "x" : 4,
-    "y" : 3,
-    "isVertical" : false
-  }, {
-    "x" : 2,
-    "y" : 0,
-    "isVertical" : false
-  }, {
-    "x" : 2,
-    "y" : 1,
-    "isVertical" : true
-  }, {
-    "x" : 3,
-    "y" : 0,
-    "isVertical" : false
-  }, {
-    "x" : 4,
-    "y" : 0,
-    "isVertical" : false
-  }, {
-    "x" : 5,
     "y" : 1,
     "isVertical" : true
   }, {
     "x" : 5,
     "y" : 3,
+    "isVertical" : true
+  }, {
+    "x" : 5,
+    "y" : 1,
     "isVertical" : true
   } ],
   "beepers" : [ {

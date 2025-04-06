@@ -90,21 +90,19 @@ public class World {
         for (Wall wall : walls) {
             if (wall.isVertical()) {
                 // For vertical walls, check if we're trying to pass through it
-                if (currentY == newY && wall.getY() == currentY) {
-                    // Check if the wall is between our current and new position
+                if (currentY == newY) {  // Moving horizontally
                     int minX = Math.min(currentX, newX);
                     int maxX = Math.max(currentX, newX);
-                    if (wall.getX() >= minX && wall.getX() <= maxX) {
+                    if (wall.getX() > minX && wall.getX() <= maxX && wall.getY() == currentY) {
                         return false;
                     }
                 }
             } else {
                 // For horizontal walls, check if we're trying to pass through it
-                if (currentX == newX && wall.getX() == currentX) {
-                    // Check if the wall is between our current and new position
+                if (currentX == newX) {  // Moving vertically
                     int minY = Math.min(currentY, newY);
                     int maxY = Math.max(currentY, newY);
-                    if (wall.getY() >= minY && wall.getY() <= maxY) {
+                    if (wall.getY() > minY && wall.getY() <= maxY && wall.getX() == currentX) {
                         return false;
                     }
                 }
