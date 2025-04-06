@@ -21,6 +21,8 @@ import javafx.scene.Node;
 import javafx.geometry.Pos;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.stage.FileChooser;
+import javafx.scene.text.Font;
 
 public class Main extends Application {
     private static final int CELL_SIZE = 50;
@@ -33,7 +35,6 @@ public class Main extends Application {
     private World world;
     private Karol karol;
     private ObservableList<String> assignmentNames;
-    private String lastSavedProgram;
 
     @Override
     public void start(Stage primaryStage) {
@@ -42,7 +43,12 @@ public class Main extends Application {
             assignments = loader.loadAllAssignments();
             
             // Initialize with example program
-            lastSavedProgram = """
+            programArea = new TextArea();
+            programArea.setPrefRowCount(20);
+            programArea.setPrefColumnCount(50);
+            programArea.setWrapText(true);
+            programArea.setFont(Font.font("Monospaced", 14));
+            programArea.setText("""
                 package com.karol.userprograms;
 
                 import com.karol.KarolProgram;
@@ -51,20 +57,13 @@ public class Main extends Application {
                 public class MyProgram implements KarolProgram {
                     @Override
                     public void run(Karol karol) {
-                        // TODO: Write your program here!
-                        // Here are some commands you can use:
-                        // karol.move() - Move forward one step
-                        // karol.turnLeft() - Turn 90 degrees left
-                        // karol.turnRight() - Turn 90 degrees right
-                        // karol.putBeeper() - Put a beeper (if you have one!)
-                        // karol.pickBeeper() - Pick up a beeper
-                        // karol.frontIsClear() - Check if path ahead is clear
-                        // karol.beeperPresent() - Check if beeper is here
-                        // karol.hasBeeper() - Check if you have a beeper to put down
-                        // karol.getBeepersInBag() - Check how many beepers you have
+                        // Your code goes here
+                        karol.move();
+                        karol.turnLeft();
+                        karol.move();
                     }
                 }
-                """;
+                """);
             
             BorderPane root = new BorderPane();
             
@@ -88,11 +87,11 @@ public class Main extends Application {
 
             Button createProblemButton = new Button("Create Problem");
             createProblemButton.setMaxWidth(Double.MAX_VALUE);
-            createProblemButton.setOnAction(e -> createNewProblem());
+            createProblemButton.setOnAction(_ -> createNewProblem());
 
             Button deleteButton = new Button("Delete Assignment");
             deleteButton.setMaxWidth(Double.MAX_VALUE);
-            deleteButton.setOnAction(e -> deleteSelectedAssignment());
+            deleteButton.setOnAction(_ -> deleteSelectedAssignment());
 
             leftPanel.getChildren().addAll(
                 assignmentsLabel, assignmentList,
@@ -132,8 +131,7 @@ public class Main extends Application {
             programArea.setStyle("-fx-font-family: monospace;");
 
             // Update line numbers when text changes
-            programArea.textProperty().addListener((obs, oldText, newText) -> {
-                lastSavedProgram = newText;
+            programArea.textProperty().addListener((_, _, newText) -> {
                 updateLineNumbers(lineNumbers, newText);
             });
 
@@ -149,34 +147,9 @@ public class Main extends Application {
             editorBox.getChildren().addAll(lineNumbers, programArea);
             HBox.setHgrow(programArea, Priority.ALWAYS);
 
-            // Set initial text and line numbers
-            programArea.setText("""
-                package com.karol.userprograms;
-
-                import com.karol.KarolProgram;
-                import com.karol.Karol;
-
-                public class MyProgram implements KarolProgram {
-                    @Override
-                    public void run(Karol karol) {
-                        // TODO: Write your program here!
-                        // Here are some commands you can use:
-                        // karol.move() - Move forward one step
-                        // karol.turnLeft() - Turn left
-                        // karol.turnRight() - Turn right
-                        // karol.putBeeper() - Put down a beeper (if you have one!)
-                        // karol.pickBeeper() - Pick up a beeper
-                        // karol.frontIsClear() - Check if path ahead is clear
-                        // karol.beeperPresent() - Check if beeper is here
-                        // karol.hasBeeper() - Check if you have a beeper to put down
-                        // karol.getBeepersInBag() - Check how many beepers you have
-                    }
-                }
-                """);
-
             Button runProgramButton = new Button("Run Program");
             runProgramButton.setMaxWidth(Double.MAX_VALUE);
-            runProgramButton.setOnAction(e -> runProgram());
+            runProgramButton.setOnAction(_ -> runProgram());
 
             // Command library section
             TitledPane libraryPane = new TitledPane();
@@ -245,7 +218,7 @@ public class Main extends Application {
             HBox buttonBox = new HBox(10);
             Button saveButton = new Button("Save Solution");
             saveButton.setMaxWidth(Double.MAX_VALUE);
-            saveButton.setOnAction(e -> saveSolution());
+            saveButton.setOnAction(_ -> saveSolution());
             runProgramButton.setMaxWidth(Double.MAX_VALUE);
             buttonBox.getChildren().addAll(runProgramButton, saveButton);
             HBox.setHgrow(runProgramButton, Priority.ALWAYS);
@@ -301,7 +274,7 @@ public class Main extends Application {
             );
             
             // Event handlers
-            assignmentList.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            assignmentList.getSelectionModel().selectedItemProperty().addListener((_, _, newVal) -> {
                 boolean hasSelection = (newVal != null);
                 
                 // Enable/disable UI elements based on selection
@@ -331,7 +304,7 @@ public class Main extends Application {
                 }
             });
             
-            moveButton.setOnAction(e -> {
+            moveButton.setOnAction(_ -> {
                 if (karol != null) {
                     try {
                         karol.move();
@@ -342,21 +315,21 @@ public class Main extends Application {
                 }
             });
             
-            turnLeftButton.setOnAction(e -> {
+            turnLeftButton.setOnAction(_ -> {
                 if (karol != null) {
                     karol.turnLeft();
                     drawWorld();
                 }
             });
             
-            turnRightButton.setOnAction(e -> {
+            turnRightButton.setOnAction(_ -> {
                 if (karol != null) {
                     karol.turnRight();
                     drawWorld();
                 }
             });
             
-            pickBeeperButton.setOnAction(e -> {
+            pickBeeperButton.setOnAction(_ -> {
                 if (karol != null) {
                     try {
                         karol.pickBeeper();
@@ -368,7 +341,7 @@ public class Main extends Application {
                 }
             });
             
-            putBeeperButton.setOnAction(e -> {
+            putBeeperButton.setOnAction(_ -> {
                 if (karol != null) {
                     try {
                         karol.putBeeper();
@@ -380,7 +353,7 @@ public class Main extends Application {
                 }
             });
             
-            resetButton.setOnAction(e -> {
+            resetButton.setOnAction(_ -> {
                 if (assignmentList.getSelectionModel().getSelectedItem() != null) {
                     // Find and reload the current assignment
                     String selectedName = assignmentList.getSelectionModel().getSelectedItem();
@@ -558,40 +531,33 @@ public class Main extends Application {
         // Show the dialog and wait for response
         if (dialog.showAndWait().filter(response -> response == ButtonType.OK).isPresent()) {
             String name = nameField.getText().trim();
-            String description = descriptionArea.getText().trim();
             
             if (!name.isEmpty()) {
                 // Open the world editor
                 Stage editorStage = new Stage();
-                WorldEditor editor = new WorldEditor();
-                editor.setOnSave(worldEditor -> {
+                WorldEditor editor = new WorldEditor(editorInstance -> {
+                    // Save the world configuration
                     try {
-                        // Create the assignment JSON
                         ObjectMapper mapper = new ObjectMapper();
-                        ObjectNode assignmentNode = mapper.createObjectNode();
-                        assignmentNode.put("name", name);
-                        assignmentNode.put("description", description);
-                        assignmentNode.put("worldWidth", worldEditor.getWorldWidth());
-                        assignmentNode.put("worldHeight", worldEditor.getWorldHeight());
-                        assignmentNode.set("initialRobots", worldEditor.getRobotsNode());
-                        assignmentNode.set("walls", worldEditor.getWallsNode());
-                        assignmentNode.set("beepers", worldEditor.getBeepersNode());
-
-                        // Save to file
-                        String filename = name.toLowerCase().replace(" ", "_") + ".json";
-                        File file = new File("src/main/resources/assignments/" + filename);
-                        mapper.writerWithDefaultPrettyPrinter().writeValue(file, assignmentNode);
-
-                        // Reload assignments
-                        assignments = loader.loadAllAssignments();
-                        assignmentNames.clear();
-                        for (Assignment assignment : assignments) {
-                            assignmentNames.add(assignment.getName());
+                        ObjectNode worldNode = mapper.createObjectNode();
+                        
+                        worldNode.put("worldWidth", editorInstance.getWorldWidth());
+                        worldNode.put("worldHeight", editorInstance.getWorldHeight());
+                        worldNode.set("initialRobots", editorInstance.getRobotsNode());
+                        worldNode.set("walls", editorInstance.getWallsNode());
+                        worldNode.set("beepers", editorInstance.getBeepersNode());
+                        
+                        FileChooser fileChooser = new FileChooser();
+                        fileChooser.setTitle("Save World");
+                        fileChooser.getExtensionFilters().add(
+                            new FileChooser.ExtensionFilter("JSON Files", "*.json")
+                        );
+                        File file = fileChooser.showSaveDialog(editorStage);
+                        if (file != null) {
+                            mapper.writerWithDefaultPrettyPrinter().writeValue(file, worldNode);
                         }
-
-                        editorStage.close();
-                    } catch (IOException ex) {
-                        showError("Error saving problem: " + ex.getMessage());
+                    } catch (Exception ex) {
+                        showError("Error saving world: " + ex.getMessage());
                     }
                 });
 
@@ -620,7 +586,7 @@ public class Main extends Application {
             try {
                 // Find the assignment file by matching the name in the JSON
                 File assignmentsDir = new File("src/main/resources/assignments");
-                File[] files = assignmentsDir.listFiles((dir, name) -> name.endsWith(".json"));
+                File[] files = assignmentsDir.listFiles((_, name) -> name.endsWith(".json"));
                 
                 boolean deleted = false;
                 if (files != null) {
@@ -671,12 +637,12 @@ public class Main extends Application {
             String sourceCode = programArea.getText();
             
             // Extract class name from source code
-            String className = "UserProgram"; // Default name
-            if (sourceCode.contains("class")) {
-                int classIndex = sourceCode.indexOf("class") + 6;
-                int braceIndex = sourceCode.indexOf("{", classIndex);
-                if (classIndex > 5 && braceIndex > classIndex) {
-                    className = sourceCode.substring(classIndex, braceIndex).trim();
+            String className = "MyProgram"; // Default name
+            if (sourceCode.contains("class ")) {
+                int classIndex = sourceCode.indexOf("class ") + 6;
+                int implementsIndex = sourceCode.indexOf(" implements", classIndex);
+                if (classIndex > 5 && implementsIndex > classIndex) {
+                    className = sourceCode.substring(classIndex, implementsIndex).trim();
                 }
             }
 
@@ -732,7 +698,6 @@ public class Main extends Application {
             if (solutionFile.exists()) {
                 String savedSolution = Files.readString(solutionFile.toPath());
                 programArea.setText(savedSolution);
-                lastSavedProgram = savedSolution;
             } else {
                 // If no solution exists, load the default template
                 programArea.setText("""

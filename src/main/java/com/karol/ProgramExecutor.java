@@ -10,14 +10,84 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import javax.tools.*;
 import java.util.List;
-import java.util.Locale;
+import java.net.URI;
+import java.util.ArrayList;
 
 /**
  * Handles compilation and execution of user programs.
  */
 public class ProgramExecutor {
     private static final String TEMP_DIR = "temp_programs";
-    private static final String PACKAGE_NAME = "com.karol.userprograms";
+    private static final String REQUIRED_PACKAGE = "com.karol.userprograms";
+
+    private static JavaFileObject createSourceFileObject(String sourceCode, String className) {
+        // Create a safe URI by replacing any illegal characters
+        String safeClassName = className.replaceAll("[^a-zA-Z0-9]", "_");
+        return new SimpleJavaFileObject(
+            URI.create("string:///" + safeClassName + ".java"),
+            JavaFileObject.Kind.SOURCE
+        ) {
+            @Override
+            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
+                return sourceCode;
+            }
+        };
+    }
+
+    /**
+     * Validates the source code before compilation.
+     * @param sourceCode The source code to validate
+     * @param className The name of the class being compiled
+     * @throws Exception if validation fails
+     */
+    private static void validateSourceCode(String sourceCode, String className) throws Exception {
+        // First check for package and other requirements
+        if (!sourceCode.contains("package ")) {
+            throw new Exception("Missing package declaration. Required package: " + REQUIRED_PACKAGE);
+        }
+        
+        if (!sourceCode.contains("package " + REQUIRED_PACKAGE)) {
+            throw new Exception("Invalid package. Must be: " + REQUIRED_PACKAGE);
+        }
+
+        if (!sourceCode.contains("implements KarolProgram")) {
+            throw new Exception("Class must implement KarolProgram interface");
+        }
+
+        if (!sourceCode.contains("import com.karol.KarolProgram") || 
+            !sourceCode.contains("import com.karol.Karol")) {
+            throw new Exception("Missing required imports: com.karol.KarolProgram and com.karol.Karol");
+        }
+
+        // Now try to compile to catch syntax errors
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        if (compiler == null) {
+            throw new Exception("Java compiler not available. Please run with JDK instead of JRE.");
+        }
+
+        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+        StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
+        
+        JavaFileObject sourceFile = createSourceFileObject(sourceCode, className);
+
+        // Set up compilation options
+        List<String> options = new ArrayList<>();
+        String classesDir = new File("target/classes").getAbsolutePath();
+        options.add("-cp");
+        options.add(classesDir);
+
+        JavaCompiler.CompilationTask task = compiler.getTask(
+            null, fileManager, diagnostics, options, null, Arrays.asList(sourceFile)
+        );
+
+        if (!task.call()) {
+            StringBuilder errorMsg = new StringBuilder("Compilation failed:\n");
+            for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
+                errorMsg.append(diagnostic.getMessage(null)).append("\n");
+            }
+            throw new Exception(errorMsg.toString());
+        }
+    }
 
     /**
      * Compiles and loads a Java program from source code.
@@ -27,117 +97,69 @@ public class ProgramExecutor {
      * @throws Exception if compilation or loading fails
      */
     public static Class<?> compileAndLoad(String sourceCode, String className) throws Exception {
-        // Create temp directory if it doesn't exist
-        Path tempDir = Paths.get(TEMP_DIR);
-        if (!Files.exists(tempDir)) {
-            Files.createDirectories(tempDir);
-        }
+        // Validate source code first
+        validateSourceCode(sourceCode, className);
 
-        // Create package directory structure
-        Path packageDir = tempDir.resolve(PACKAGE_NAME.replace('.', '/'));
-        if (!Files.exists(packageDir)) {
-            Files.createDirectories(packageDir);
-        }
-
-        // Extract actual class name from source code
-        String actualClassName = extractClassName(sourceCode);
-        if (actualClassName == null) {
-            throw new Exception("Could not find class name in source code");
-        }
-
-        // Create source file with correct name
-        Path sourceFile = packageDir.resolve(actualClassName + ".java");
-        Files.writeString(sourceFile, sourceCode);
-
-        // Get the Java compiler
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        if (compiler == null) {
-            throw new Exception("Could not find Java compiler. Please ensure JDK is installed and JAVA_HOME is set correctly.");
-        }
-
-        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-        StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
-
-        // Get classpath including the temp directory
-        String classpath = System.getProperty("java.class.path") + File.pathSeparator + tempDir.toString();
-
-        Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(Arrays.asList(sourceFile.toFile()));
-
-        List<String> options = Arrays.asList(
-            "-classpath", classpath,
-            "-d", tempDir.toString(),
-            "-Xlint:all"  // Enable all warnings
-        );
-
-        // Compile
-        JavaCompiler.CompilationTask task = compiler.getTask(
-            null,
-            fileManager,
-            diagnostics,
-            options,
-            null,
-            compilationUnits
-        );
-
-        boolean success = task.call();
-        fileManager.close();
-
-        if (!success) {
-            StringBuilder errorMsg = new StringBuilder("Compilation failed:\n");
-            for (Diagnostic<?> diagnostic : diagnostics.getDiagnostics()) {
-                if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
-                    errorMsg.append(String.format(Locale.ENGLISH,
-                        "Line %d: %s%n",
-                        diagnostic.getLineNumber(),
-                        diagnostic.getMessage(null)
-                    ));
-                }
-            }
-            throw new Exception(errorMsg.toString());
-        }
-
-        // Verify the class implements KarolProgram
+        // Create a temporary directory for compiled classes
+        Path tempDir = Files.createTempDirectory("karol-classes");
         try {
-            URLClassLoader classLoader = new URLClassLoader(
-                new URL[] { tempDir.toUri().toURL() },
-                ProgramExecutor.class.getClassLoader()
+            // Compile the source code
+            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+            StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
+            
+            // Create a JavaFileObject for the source code
+            JavaFileObject sourceFile = createSourceFileObject(sourceCode, className);
+            
+            // Set up compilation options
+            List<String> options = new ArrayList<>();
+            options.add("-d");
+            options.add(tempDir.toString());
+            
+            // Add the project's classes to the classpath
+            String classesDir = new File("target/classes").getAbsolutePath();
+            options.add("-cp");
+            options.add(classesDir);
+            
+            // Create a diagnostic collector to capture compilation errors
+            DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+            
+            // Compile the source code
+            JavaCompiler.CompilationTask task = compiler.getTask(
+                null, fileManager, diagnostics, options, null, Arrays.asList(sourceFile)
             );
             
-            Class<?> loadedClass = classLoader.loadClass(PACKAGE_NAME + "." + actualClassName);
-            if (!KarolProgram.class.isAssignableFrom(loadedClass)) {
-                throw new Exception("Class " + actualClassName + " must implement KarolProgram interface");
+            if (!task.call()) {
+                StringBuilder errorMsg = new StringBuilder("Compilation failed:\n");
+                for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
+                    errorMsg.append(diagnostic.getMessage(null)).append("\n");
+                }
+                throw new Exception(errorMsg.toString());
             }
-            return loadedClass;
-        } catch (ClassNotFoundException e) {
-            throw new Exception("Could not load compiled class: " + e.getMessage());
+            
+            // Create a class loader that includes both the temp directory and the project's classes
+            URL[] urls = new URL[] { 
+                tempDir.toUri().toURL(),
+                new File(classesDir).toURI().toURL()
+            };
+            
+            // Create a class loader with the parent class loader to ensure proper interface loading
+            URLClassLoader classLoader = new URLClassLoader(urls, ProgramExecutor.class.getClassLoader());
+            try {
+                Class<?> loadedClass = classLoader.loadClass(REQUIRED_PACKAGE + "." + className);
+                
+                // Verify that the class implements KarolProgram
+                if (!KarolProgram.class.isAssignableFrom(loadedClass)) {
+                    throw new Exception("Class " + className + " does not implement KarolProgram interface");
+                }
+                
+                return loadedClass;
+            } finally {
+                classLoader.close();
+            }
+        } finally {
+            // Clean up temporary files
+            cleanup();
         }
-    }
-
-    /**
-     * Extracts the class name from the source code.
-     * @param sourceCode The source code to analyze
-     * @return The class name, or null if not found
-     */
-    private static String extractClassName(String sourceCode) {
-        // Find the class declaration
-        int classIndex = sourceCode.indexOf("class");
-        if (classIndex == -1) return null;
-
-        // Find the start of the class name
-        int nameStart = classIndex + 5;
-        while (nameStart < sourceCode.length() && Character.isWhitespace(sourceCode.charAt(nameStart))) {
-            nameStart++;
-        }
-
-        // Find the end of the class name
-        int nameEnd = nameStart;
-        while (nameEnd < sourceCode.length() && 
-               (Character.isJavaIdentifierPart(sourceCode.charAt(nameEnd)) || sourceCode.charAt(nameEnd) == '.')) {
-            nameEnd++;
-        }
-
-        if (nameStart >= nameEnd) return null;
-        return sourceCode.substring(nameStart, nameEnd).trim();
     }
 
     /**
@@ -147,11 +169,14 @@ public class ProgramExecutor {
      * @throws Exception if execution fails
      */
     public static void executeProgram(Class<?> programClass, Karol karol) throws Exception {
-        Object program = programClass.getDeclaredConstructor().newInstance();
-        if (program instanceof KarolProgram) {
+        try {
+            Object program = programClass.getDeclaredConstructor().newInstance();
+            if (!(program instanceof KarolProgram)) {
+                throw new Exception("Program does not implement KarolProgram interface");
+            }
             ((KarolProgram) program).run(karol);
-        } else {
-            throw new Exception("Program does not implement KarolProgram interface");
+        } catch (Exception e) {
+            throw new Exception("Failed to execute program: " + e.getMessage());
         }
     }
 

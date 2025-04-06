@@ -4,13 +4,11 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
-import javafx.stage.FileChooser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import javafx.geometry.Insets;
 import javafx.scene.input.MouseButton;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.input.MouseEvent;
@@ -27,27 +25,27 @@ public class WorldEditor extends VBox {
     private static final int CELL_SIZE = 60;
     private Consumer<WorldEditor> onSave;
     
-    public WorldEditor() {
-        setPadding(new Insets(10));
+    public WorldEditor(Consumer<WorldEditor> onSave) {
         setSpacing(10);
+        setPadding(new Insets(10));
         
         // Create toolbar
         HBox toolbar = new HBox(10);
+        toolbar.setPadding(new Insets(5));
         
-        // World size controls
-        TextField widthField = new TextField(String.valueOf(worldWidth));
-        widthField.setPrefWidth(50);
-        TextField heightField = new TextField(String.valueOf(worldHeight));
-        heightField.setPrefWidth(50);
-        Button resizeButton = new Button("Resize World");
-        resizeButton.setOnAction(e -> {
-            try {
-                worldWidth = Integer.parseInt(widthField.getText());
-                worldHeight = Integer.parseInt(heightField.getText());
-                createGrid();
-            } catch (NumberFormatException ex) {
-                showAlert("Invalid dimensions");
-            }
+        // Add world size controls
+        Label widthLabel = new Label("Width:");
+        Spinner<Integer> widthSpinner = new Spinner<>(1, 20, worldWidth);
+        widthSpinner.valueProperty().addListener((_, _, newValue) -> {
+            worldWidth = newValue;
+            createGrid();
+        });
+        
+        Label heightLabel = new Label("Height:");
+        Spinner<Integer> heightSpinner = new Spinner<>(1, 20, worldHeight);
+        heightSpinner.valueProperty().addListener((_, _, newValue) -> {
+            worldHeight = newValue;
+            createGrid();
         });
         
         // Tool selection
@@ -77,31 +75,18 @@ public class WorldEditor extends VBox {
         
         // Save button
         Button saveButton = new Button("Save World");
-        saveButton.setOnAction(e -> {
-            if (onSave != null) {
-                onSave.accept(this);
-            } else {
-                saveWorld();
-            }
-        });
+        saveButton.setOnAction(_ -> saveWorld());
         
         toolbar.getChildren().addAll(
-            new Label("Width:"), widthField,
-            new Label("Height:"), heightField,
-            resizeButton,
-            new Separator(javafx.geometry.Orientation.VERTICAL),
+            widthLabel, widthSpinner,
+            heightLabel, heightSpinner,
             horizontalWallButton, verticalWallButton, beeperButton, robotButton, eraseButton,
-            new Separator(javafx.geometry.Orientation.VERTICAL),
             saveButton
         );
         
         getChildren().add(toolbar);
         
         createGrid();
-    }
-    
-    public void setOnSave(Consumer<WorldEditor> callback) {
-        this.onSave = callback;
     }
 
     public int getWorldWidth() {
@@ -294,59 +279,13 @@ public class WorldEditor extends VBox {
         cell.getChildren().clear();
     }
     
-    private void saveWorld() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Save World");
-        fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("JSON Files", "*.json")
-        );
-        
-        File file = fileChooser.showSaveDialog(getScene().getWindow());
-        if (file != null) {
-            try {
-                ObjectMapper mapper = new ObjectMapper();
-                ObjectNode worldNode = mapper.createObjectNode();
-                
-                worldNode.put("worldWidth", worldWidth);
-                worldNode.put("worldHeight", worldHeight);
-                
-                if (robot != null) {
-                    ArrayNode robotsNode = worldNode.putArray("initialRobots");
-                    ObjectNode robotNode = robotsNode.addObject();
-                    robotNode.put("x", robot.getX());
-                    robotNode.put("y", robot.getY());
-                    robotNode.put("direction", robot.getDirection().toString());
-                }
-                
-                ArrayNode wallsNode = worldNode.putArray("walls");
-                for (Wall wall : walls) {
-                    ObjectNode wallNode = wallsNode.addObject();
-                    wallNode.put("x", wall.getX());
-                    wallNode.put("y", wall.getY());
-                    wallNode.put("isVertical", wall.isVertical());
-                }
-                
-                ArrayNode beepersNode = worldNode.putArray("beepers");
-                for (Beeper beeper : beepers) {
-                    ObjectNode beeperNode = beepersNode.addObject();
-                    beeperNode.put("x", beeper.getX());
-                    beeperNode.put("y", beeper.getY());
-                    beeperNode.put("count", beeper.getCount());
-                }
-                
-                mapper.writerWithDefaultPrettyPrinter().writeValue(file, worldNode);
-                showAlert("World saved successfully!");
-            } catch (Exception e) {
-                showAlert("Error saving world: " + e.getMessage());
-            }
-        }
+    public void setOnSave(Consumer<WorldEditor> callback) {
+        this.onSave = callback;
     }
-    
-    private void showAlert(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("World Editor");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+
+    private void saveWorld() {
+        if (onSave != null) {
+            onSave.accept(this);
+        }
     }
 } 
