@@ -37,74 +37,73 @@ public class World {
         walls.add(wall);
     }
 
-    public void addBeeper(Beeper beeper) {
-        Optional<Beeper> existingBeeper = beepers.stream()
-            .filter(b -> b.getX() == beeper.getX() && b.getY() == beeper.getY())
-            .findFirst();
+    public void clearWalls() {
+        walls.clear();
+    }
 
-        if (existingBeeper.isPresent()) {
-            Beeper existing = existingBeeper.get();
-            existing.setCount(existing.getCount() + beeper.getCount());
-        } else {
-            beepers.add(beeper);
+    public void clearBeepers() {
+        beepers.clear();
+    }
+
+    public void addBeeper(Beeper beeper) {
+        // Check if there's already a beeper at this location
+        for (Beeper existing : beepers) {
+            if (existing.getX() == beeper.getX() && existing.getY() == beeper.getY()) {
+                existing.setCount(existing.getCount() + beeper.getCount());
+                return;
+            }
         }
+        // If no existing beeper found, add the new one
+        beepers.add(beeper);
     }
 
     public void putBeeper(int x, int y) {
-        Optional<Beeper> existingBeeper = beepers.stream()
-            .filter(b -> b.getX() == x && b.getY() == y)
-            .findFirst();
-
-        if (existingBeeper.isPresent()) {
-            Beeper beeper = existingBeeper.get();
-            beeper.setCount(beeper.getCount() + 1);
-        } else {
-            beepers.add(new Beeper(x, y, 1));
+        // Check if there's already a beeper at this location
+        for (Beeper beeper : beepers) {
+            if (beeper.getX() == x && beeper.getY() == y) {
+                beeper.setCount(beeper.getCount() + 1);
+                return;
+            }
         }
+        // If no existing beeper found, add a new one
+        beepers.add(new Beeper(x, y, 1));
     }
 
     public void pickBeeper(int x, int y) {
-        Optional<Beeper> existingBeeper = beepers.stream()
-            .filter(b -> b.getX() == x && b.getY() == y)
-            .findFirst();
-
-        if (existingBeeper.isPresent()) {
-            Beeper beeper = existingBeeper.get();
-            if (beeper.getCount() > 1) {
-                beeper.setCount(beeper.getCount() - 1);
-            } else {
-                beepers.remove(beeper);
+        for (Beeper beeper : beepers) {
+            if (beeper.getX() == x && beeper.getY() == y) {
+                if (beeper.getCount() > 1) {
+                    beeper.setCount(beeper.getCount() - 1);
+                } else {
+                    beepers.remove(beeper);
+                }
+                return;
             }
-        } else {
-            throw new IllegalStateException("No beeper to pick up at (" + x + ", " + y + ")");
         }
+        throw new IllegalStateException("No beeper to pick up!");
     }
 
-    public boolean isValidMove(int currentX, int currentY, int newX, int newY) {
-        // Check boundaries
-        if (newX < 0 || newX >= width || newY < 0 || newY >= height) {
+    public boolean isValidMove(int fromX, int fromY, int toX, int toY) {
+        // Check world boundaries
+        if (toX < 0 || toX >= width || toY < 0 || toY >= height) {
             return false;
         }
 
-        // Check walls
+        // Check for walls
         for (Wall wall : walls) {
             if (wall.isVertical()) {
-                // For vertical walls, check if we're trying to pass through it
-                if (currentY == newY) {  // Moving horizontally
-                    int minX = Math.min(currentX, newX);
-                    int maxX = Math.max(currentX, newX);
-                    if (wall.getX() > minX && wall.getX() <= maxX && wall.getY() == currentY) {
-                        return false;
-                    }
+                // Vertical wall blocks horizontal movement
+                if (wall.getX() == Math.max(fromX, toX) && 
+                    wall.getY() == fromY && 
+                    Math.abs(fromX - toX) == 1) {
+                    return false;
                 }
             } else {
-                // For horizontal walls, check if we're trying to pass through it
-                if (currentX == newX) {  // Moving vertically
-                    int minY = Math.min(currentY, newY);
-                    int maxY = Math.max(currentY, newY);
-                    if (wall.getY() > minY && wall.getY() <= maxY && wall.getX() == currentX) {
-                        return false;
-                    }
+                // Horizontal wall blocks vertical movement
+                if (wall.getY() == Math.max(fromY, toY) && 
+                    wall.getX() == fromX && 
+                    Math.abs(fromY - toY) == 1) {
+                    return false;
                 }
             }
         }
